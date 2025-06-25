@@ -99,6 +99,10 @@ jobs:
       run: |
         mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
+    - name: Verify APK signature
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify RainbowMover_${{ steps.version.outputs.version }}.apk
+    
     - name: Create and push git tag (force update if exists)
       run: |
         git config user.name "github-actions"
