@@ -1,10 +1,10 @@
-name: now do the android shake (put dancing man emoji here)
+name: now do the android shake (insert dancing man emoji here)
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Needed to create releases and upload assets
+  contents: write  # Required to create and upload to GitHub Releases
 
 jobs:
   build:
@@ -72,52 +72,3 @@ jobs:
       run: |
         keytool -genkey -v \
           -keystore debug.keystore \
-          -alias androiddebugkey \
-          -storepass android \
-          -keypass android \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -dname "CN=Android Debug,O=Android,C=US"
-
-    - name: Sign APK
-      run: |
-        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
-          --ks debug.keystore \
-          --ks-pass pass:android \
-          --key-pass pass:android \
-          --out RainbowMover_signed.apk unsigned.apk
-
-    - name: Extract version from AndroidManifest.xml
-      id: version
-      run: |
-        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
-        echo "version=$version" >> $GITHUB_OUTPUT
-
-    - name: Rename signed APK
-      run: |
-        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
-
-    - name: Upload APK to GitHub Actions artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: RainbowMover
-        path: RainbowMover_${{ steps.version.outputs.version }}.apk
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.version.outputs.version }}
-        name: RainbowMover v${{ steps.version.outputs.version }}
-        body: "Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload APK to GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.version.outputs.version }}
-        asset_name: RainbowMover_${{ steps.version.outputs.version }}.apk
-        asset_path: RainbowMover_${{ steps.version.outputs.version }}.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
