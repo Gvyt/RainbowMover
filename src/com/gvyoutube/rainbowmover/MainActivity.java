@@ -29,14 +29,20 @@ public class MainActivity extends Activity {
         Uri videoUri = Uri.parse(videoUrl);
         videoView.setVideoURI(videoUri);
 
-        videoView.setOnPreparedListener(mp -> {
-            progressBar.setVisibility(ProgressBar.GONE);
-            videoView.start();
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                progressBar.setVisibility(ProgressBar.GONE);
+                videoView.start();
+            }
         });
 
-        videoView.setOnErrorListener((mp, what, extra) -> {
-            progressBar.setVisibility(ProgressBar.GONE);
-            return true;
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                progressBar.setVisibility(ProgressBar.GONE);
+                return true;
+            }
         });
     }
 }
