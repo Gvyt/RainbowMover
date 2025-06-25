@@ -47,3 +47,38 @@ jobs:
     - name: Convert classes to dex
       run: |
         $ANDROID_HO_
+
+    - name: Extract version from AndroidManifest.xml
+      id: version
+      run: |
+        version=$(grep -oP 'versionName="\\K[^"]+' AndroidManifest.xml)
+        echo "version=${version}" >> $GITHUB_OUTPUT
+
+    - name: Rename APK with version
+      run: |
+        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Upload signed APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: RainbowMover
+        path: RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: RainbowMover v${{ steps.version.outputs.version }}
+        body: "Automated build of RainbowMover version ${{ steps.version.outputs.version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload APK to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: RainbowMover_${{ steps.version.outputs.version }}.apk
+        asset_path: RainbowMover_${{ steps.version.outputs.version }}.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
