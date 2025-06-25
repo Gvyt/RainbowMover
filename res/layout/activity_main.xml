@@ -9,7 +9,7 @@
         android:layout_height="48dp"
         android:layout_gravity="top|start"
         android:layout_margin="16dp"
-        android:src="@mipmap/appIcon"
+        android:src="@mipmap/appicon"
         android:contentDescription="@string/app_icon_desc" />
 
     <ProgressBar
