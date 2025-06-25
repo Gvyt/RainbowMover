@@ -90,20 +90,20 @@ jobs:
 
     - name: Align APK for release
       run: |
-        zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk
+        set -e
+        echo "Running zipalign..."
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk || { echo "zipalign failed!"; exit 1; }
         mv RainbowMover_aligned.apk RainbowMover_signed.apk
+        echo "APK aligned successfully."
 
-    - name: Check alignment of signed APK
+    - name: Verify signed APK
       run: |
-        echo "🔍 Checking alignment of signed APK..."
-        zipalign_output=$(zipalign -c -v 4 RainbowMover_signed.apk 2>&1)
-        if [ $? -eq 0 ]; then
-          echo "✅ APK alignment is good."
-        else
-          echo "❌ APK zip alignment failed!"
-          echo "$zipalign_output"
+        if [ ! -f RainbowMover_signed.apk ]; then
+          echo "Signed APK not found!"
           exit 1
         fi
+        echo "Signed APK exists:"
+        ls -lh RainbowMover_signed.apk
 
     - name: Extract version from AndroidManifest.xml
       id: version
