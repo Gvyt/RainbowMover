@@ -24,7 +24,8 @@ public class MainActivity extends AppCompatActivity {
     private float dX, dY;
     private int lastAction;
 
-    private final String localFileName = "/assets/appvid.mp4";
+    private final String videoUrl = "https://file.garden/Z4ry-cpnZQh7VmhL/Rainbow%20Trololol.mp4";
+    private final String localFileName = "appvid.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
         videoView = findViewById(R.id.videoView);
         progressBar = findViewById(R.id.progressBar);
 
-        // Make VideoView draggable
         videoView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -52,9 +52,6 @@ public class MainActivity extends AppCompatActivity {
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        if (lastAction == MotionEvent.ACTION_DOWN) {
-                            // Click action if needed
-                        }
                         return true;
 
                     default:
@@ -63,12 +60,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        File localFile = new File(getFilesDir(), localFileName);
-        if (localFile.exists()) {
-            playVideo(localFile);
-        } else {
-            downloadVideo(videoUrl, localFile);
-        }
+        downloadVideo(videoUrl, new File(getFilesDir(), localFileName));
     }
 
     private void playVideo(File videoFile) {
@@ -111,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
 
                     if (fileLength > 0) {
                         int progress = (int) (total * 100L / fileLength);
-                        // Update progress bar on UI thread
                         handler.post(() -> progressBar.setProgress(progress));
                     }
                 }
@@ -120,16 +111,14 @@ public class MainActivity extends AppCompatActivity {
                 output.close();
                 input.close();
 
-                // Once done, play the video on UI thread
                 handler.post(() -> playVideo(outputFile));
 
             } catch (Exception e) {
                 e.printStackTrace();
-                // Handle errors (show message or retry)
                 Handler handler = new Handler(getMainLooper());
                 handler.post(() -> {
                     progressBar.setVisibility(View.GONE);
-                    // Optionally show an error message or retry button
+                    // Optionally show an error message here
                 });
             }
         }).start();
