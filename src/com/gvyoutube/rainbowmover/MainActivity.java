@@ -1,6 +1,6 @@
 package com.gvyoutube.rainbowmover;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.app.Activity;
 import android.os.Bundle;
 import android.net.Uri;
 import android.view.MotionEvent;
@@ -10,7 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.VideoView;
 import android.media.MediaPlayer;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private VideoView videoView;
     private ProgressBar progressBar;
