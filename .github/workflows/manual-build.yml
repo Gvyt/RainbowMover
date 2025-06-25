@@ -31,6 +31,15 @@ jobs:
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
+    - name: Generate R.java with aapt
+  run: |
+    mkdir -p src
+    $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m -J src \
+      -M AndroidManifest.xml \
+      -S res \
+      -I $ANDROID_HOME/platforms/android-33/android.jar
+
+
     - name: Compile Java source
       run: |
         mkdir -p obj
