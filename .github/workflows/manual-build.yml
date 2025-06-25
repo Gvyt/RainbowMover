@@ -51,7 +51,7 @@ jobs:
     - name: Extract version from AndroidManifest.xml
       id: version
       run: |
-        version=$(grep -oP 'versionName="\\K[^"]+' AndroidManifest.xml)
+        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
         echo "version=${version}" >> $GITHUB_OUTPUT
 
     - name: Rename APK with version
