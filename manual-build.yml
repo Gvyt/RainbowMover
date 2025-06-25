@@ -1,0 +1,73 @@
+name: Manual Android Build (No Gradle)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v3
+
+    - name: Install JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Download Android command line tools
+      run: |
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        curl -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+        unzip -q tools.zip -d $ANDROID_HOME/cmdline-tools
+        mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+    - name: Install platform tools and build tools
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+
+    - name: Compile Java source
+      run: |
+        mkdir -p obj
+        javac -source 1.8 -target 1.8 -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar -d obj $(find src -name "*.java")
+        $ANDROID_HOME/build-tools/34.0.0/d8 --output=classes.dex obj/
+
+    - name: Compile resources
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/aapt package -f \
+          -M AndroidManifest.xml \
+          -S res \
+          -I $ANDROID_HOME/platforms/android-33/android.jar \
+          -F unsigned.apk obj
+
+    - name: Add classes.dex to APK
+      run: |
+        zip -j unsigned.apk classes.dex
+
+    - name: Sign APK with debug key
+      run: |
+        keytool -genkey -v \
+          -keystore debug.keystore \
+          -alias androiddebugkey \
+          -storepass android \
+          -keypass android \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -dname "CN=Android Debug,O=Android,C=US"
+        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          --ks debug.keystore \
+          --ks-pass pass:android \
+          --key-pass pass:android \
+          --out signed.apk unsigned.apk
+
+    - name: Upload signed APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: RainbowMover
+        path: signed.apk
