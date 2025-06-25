@@ -1,47 +1,42 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
-import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.VideoView;
+import android.widget.MediaController;
+import android.media.MediaPlayer;
 
 public class MainActivity extends Activity {
 
     private VideoView videoView;
     private ProgressBar progressBar;
 
-    private String videoUrl = "https://file.garden/Z4ry-cpnZQh7VmhL/Rainbow%20Trololol.mp4";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        videoView = (VideoView) findViewById(R.id.videoView);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        videoView = findViewById(R.id.videoView);
+        progressBar = findViewById(R.id.progressBar);
 
         MediaController mediaController = new MediaController(this);
-        mediaController.setAnchorView(videoView);
         videoView.setMediaController(mediaController);
+        mediaController.setAnchorView(videoView);
 
-        progressBar.setVisibility(ProgressBar.VISIBLE);
-        videoView.setVideoPath(videoUrl);
+        String videoUrl = "https://file.garden/Z4ry-cpnZQh7VmhL/Rainbow%20Trololol.mp4";
+        Uri videoUri = Uri.parse(videoUrl);
+        videoView.setVideoURI(videoUri);
 
-        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                progressBar.setVisibility(ProgressBar.GONE);
-                videoView.start();
-            }
+        videoView.setOnPreparedListener(mp -> {
+            progressBar.setVisibility(ProgressBar.GONE);
+            videoView.start();
         });
 
-        videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                videoView.start(); // loop video
-            }
+        videoView.setOnErrorListener((mp, what, extra) -> {
+            progressBar.setVisibility(ProgressBar.GONE);
+            return true;
         });
     }
 }
