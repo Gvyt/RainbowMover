@@ -88,6 +88,23 @@ jobs:
           --key-pass pass:android \
           --out RainbowMover_signed.apk unsigned.apk
 
+    - name: Align APK for release
+      run: |
+        zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk
+        mv RainbowMover_aligned.apk RainbowMover_signed.apk
+
+    - name: Check alignment of signed APK
+      run: |
+        echo "🔍 Checking alignment of signed APK..."
+        zipalign_output=$(zipalign -c -v 4 RainbowMover_signed.apk 2>&1)
+        if [ $? -eq 0 ]; then
+          echo "✅ APK alignment is good."
+        else
+          echo "❌ APK zip alignment failed!"
+          echo "$zipalign_output"
+          exit 1
+        fi
+
     - name: Extract version from AndroidManifest.xml
       id: version
       run: |
@@ -99,23 +116,26 @@ jobs:
       run: |
         mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
-    - name: Verify APK signature
+    - name: Verify APK exists
       run: |
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify RainbowMover_${{ steps.version.outputs.version }}.apk
-    
-    - name: Create and push git tag (force update if exists)
+        ls -lh RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Configure git user
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
+
+    - name: Create and push git tag (force update if exists)
+      run: |
         git tag -f v${{ steps.version.outputs.version }}
         git push origin -f v${{ steps.version.outputs.version }}
 
-    - name: Upload to GitHub Release
+    - name: Create GitHub Release and upload APK
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: Auto-generated release
+        body: Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}
         files: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
