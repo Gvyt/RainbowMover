@@ -1,10 +1,10 @@
-name: Manual Android Build oh will this ever worrrrkkkwrjhkgbhgfewhufewhudefwd
+name: now do the android shake :dancing_man:
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # Needed to create releases and upload assets
 
 jobs:
   build:
@@ -45,7 +45,7 @@ jobs:
           -S res \
           -I $ANDROID_HOME/platforms/android-33/android.jar
 
-    - name: Compile Java source
+    - name: Compile Java sources
       run: |
         mkdir -p obj
         javac -source 1.8 -target 1.8 \
@@ -56,7 +56,6 @@ jobs:
       run: |
         $ANDROID_HOME/build-tools/34.0.0/d8 --output . $(find obj -name "*.class")
 
-
     - name: Create unsigned APK
       run: |
         $ANDROID_HOME/build-tools/34.0.0/aapt package -f \
@@ -66,9 +65,10 @@ jobs:
           -F unsigned.apk obj
 
     - name: Add classes.dex to APK
-      run: zip -j unsigned.apk classes.dex
+      run: |
+        zip -j unsigned.apk classes.dex
 
-    - name: Sign APK
+    - name: Generate debug keystore
       run: |
         keytool -genkey -v \
           -keystore debug.keystore \
@@ -79,6 +79,9 @@ jobs:
           -keysize 2048 \
           -validity 10000 \
           -dname "CN=Android Debug,O=Android,C=US"
+
+    - name: Sign APK
+      run: |
         $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
           --ks debug.keystore \
           --ks-pass pass:android \
@@ -93,14 +96,9 @@ jobs:
 
     - name: Rename signed APK
       run: |
-        if [ -f RainbowMover_signed.apk ]; then
-          mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
-        else
-          echo "❌ Signed APK not found! You messed up :D!"
-          exit 1
-        fi
+        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
-    - name: Upload APK to workflow artifacts
+    - name: Upload APK to GitHub Actions artifacts
       uses: actions/upload-artifact@v4
       with:
         name: RainbowMover
@@ -111,7 +109,7 @@ jobs:
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: "Auto-generated build of RainbowMover version ${{ steps.version.outputs.version }}"
+        body: "Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
