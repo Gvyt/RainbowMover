@@ -1,4 +1,4 @@
-name: Manual Android Build (No Gradle, with R.java generation)
+name: Manual Android Build oh will this ever worrrrkkkwrjhkgbhgfewhufewhudefwd
 
 on:
   workflow_dispatch:
@@ -27,9 +27,12 @@ jobs:
         unzip -q tools.zip -d $ANDROID_HOME/cmdline-tools
         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
 
-    - name: Install platform tools and build tools
+    - name: Install Android SDK packages
       run: |
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;34.0.0"
 
     - name: Generate R.java with aapt
       run: |
@@ -39,46 +42,80 @@ jobs:
           -S res \
           -I $ANDROID_HOME/platforms/android-33/android.jar
 
-    - name: Compile Java source (including generated R.java)
+    - name: Compile Java source
       run: |
         mkdir -p obj
-        javac -source 1.8 -target 1.8 -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar -d obj $(find src -name "*.java")
+        javac -source 1.8 -target 1.8 \
+          -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar \
+          -d obj $(find src -name "*.java")
 
     - name: Convert classes to dex
       run: |
-        $ANDROID_HO_
+        $ANDROID_HOME/build-tools/34.0.0/d8 --output=classes.dex obj/
+
+    - name: Create unsigned APK
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/aapt package -f \
+          -M AndroidManifest.xml \
+          -S res \
+          -I $ANDROID_HOME/platforms/android-33/android.jar \
+          -F unsigned.apk obj
+
+    - name: Add classes.dex to APK
+      run: zip -j unsigned.apk classes.dex
+
+    - name: Sign APK
+      run: |
+        keytool -genkey -v \
+          -keystore debug.keystore \
+          -alias androiddebugkey \
+          -storepass android \
+          -keypass android \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -dname "CN=Android Debug,O=Android,C=US"
+        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          --ks debug.keystore \
+          --ks-pass pass:android \
+          --key-pass pass:android \
+          --out RainbowMover_signed.apk unsigned.apk
 
     - name: Extract version from AndroidManifest.xml
       id: version
       run: |
         version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
-        echo "version=${version}" >> $GITHUB_OUTPUT
+        echo "version=$version" >> $GITHUB_OUTPUT
 
-    - name: Rename APK with version
+    - name: Rename signed APK
       run: |
-        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+        if [ -f RainbowMover_signed.apk ]; then
+          mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+        else
+          echo "❌ Signed APK not found!"
+          exit 1
+        fi
 
-    - name: Upload signed APK artifact
+    - name: Upload APK to workflow artifacts
       uses: actions/upload-artifact@v4
       with:
         name: RainbowMover
         path: RainbowMover_${{ steps.version.outputs.version }}.apk
 
     - name: Create GitHub Release
-      id: create_release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: "Automated build of RainbowMover version ${{ steps.version.outputs.version }}"
+        body: "Auto-generated build of RainbowMover version ${{ steps.version.outputs.version }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload APK to Release
+    - name: Upload APK to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
-        name: RainbowMover_${{ steps.version.outputs.version }}.apk
+        asset_name: RainbowMover_${{ steps.version.outputs.version }}.apk
         asset_path: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
