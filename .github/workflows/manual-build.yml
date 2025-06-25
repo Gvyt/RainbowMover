@@ -99,26 +99,19 @@ jobs:
       run: |
         mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
-    - name: Verify APK exists
-      run: |
-        ls -lh RainbowMover_${{ steps.version.outputs.version }}.apk
-
-    - name: Configure git user
+    - name: Create and push git tag (force update if exists)
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-
-    - name: Create and push git tag (force update if exists)
-      run: |
         git tag -f v${{ steps.version.outputs.version }}
         git push origin -f v${{ steps.version.outputs.version }}
 
-    - name: Create GitHub Release and upload APK
+    - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}
+        body: Auto-generated release
         files: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
