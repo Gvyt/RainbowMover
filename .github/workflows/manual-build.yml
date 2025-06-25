@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Required to create and upload to GitHub Releases
+  contents: write  # Needed to create tags and releases
 
 jobs:
   build:
@@ -72,3 +72,54 @@ jobs:
       run: |
         keytool -genkey -v \
           -keystore debug.keystore \
+          -alias androiddebugkey \
+          -storepass android \
+          -keypass android \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -dname "CN=Android Debug,O=Android,C=US"
+
+    - name: Sign APK
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          --ks debug.keystore \
+          --ks-pass pass:android \
+          --key-pass pass:android \
+          --out RainbowMover_signed.apk unsigned.apk
+
+    - name: Extract version from AndroidManifest.xml
+      id: version
+      run: |
+        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
+        echo "version=$version"
+        echo "version=$version" >> $GITHUB_OUTPUT
+
+    - name: Rename signed APK
+      run: |
+        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Verify APK exists
+      run: |
+        ls -lh RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Configure git user
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+
+    - name: Create and push git tag
+      run: |
+        git tag v${{ steps.version.outputs.version }}
+        git push origin v${{ steps.version.outputs.version }}
+
+    - name: Create GitHub Release and upload APK
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: RainbowMover v${{ steps.version.outputs.version }}
+        body: Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}
+        files: RainbowMover_${{ steps.version.outputs.version }}.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #will this ever work? idk idc.
