@@ -12,3 +12,6 @@ A: i refuse to spend 873268763468623486999 hours trying to get a Mac to work aga
 
 *Q: But still, wh-*
 **A: I ALREADY TOLD YOU DANG IT**
+
+*Q: OKAY GOD! But what are the files with "gradle" in them?**
+A: Its the files to have the YML build the APK for release.
