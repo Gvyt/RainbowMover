@@ -1,4 +1,4 @@
-name: now do the android shake (insert dancing man emoji here)
+name: now do the android shake
 
 on:
   workflow_dispatch:
@@ -122,4 +122,3 @@ jobs:
         files: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #will this ever work? idk idc.
