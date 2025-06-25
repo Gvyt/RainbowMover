@@ -1,29 +1,18 @@
 package com.gvyoutube.rainbowmover;
 
-import android.net.Uri;
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.MotionEvent;
-import android.view.View;
-import android.widget.MediaController;
-import android.widget.ProgressBar;
 import android.widget.VideoView;
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.widget.ProgressBar;
+import android.widget.MediaController;
+import android.net.Uri;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private VideoView videoView;
     private ProgressBar progressBar;
-
-    private float dX, dY;
-    private int lastAction;
-
     private final String videoUrl = "https://file.garden/Z4ry-cpnZQh7VmhL/Rainbow%20Trololol.mp4";
     private final String localFileName = "appvid.mp4";
 
@@ -35,92 +24,44 @@ public class MainActivity extends AppCompatActivity {
         videoView = findViewById(R.id.videoView);
         progressBar = findViewById(R.id.progressBar);
 
-        videoView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        dX = view.getX() - event.getRawX();
-                        dY = view.getY() - event.getRawY();
-                        lastAction = MotionEvent.ACTION_DOWN;
-                        return true;
-
-                    case MotionEvent.ACTION_MOVE:
-                        view.setX(event.getRawX() + dX);
-                        view.setY(event.getRawY() + dY);
-                        lastAction = MotionEvent.ACTION_MOVE;
-                        return true;
-
-                    case MotionEvent.ACTION_UP:
-                        return true;
-
-                    default:
-                        return false;
-                }
-            }
-        });
+        progressBar.setVisibility(ProgressBar.VISIBLE);
 
         downloadVideo(videoUrl, new File(getFilesDir(), localFileName));
     }
 
-    private void playVideo(File videoFile) {
-        progressBar.setVisibility(View.GONE);
-        videoView.setVisibility(View.VISIBLE);
-
-        videoView.setVideoURI(Uri.fromFile(videoFile));
-        MediaController mediaController = new MediaController(this);
-        videoView.setMediaController(mediaController);
-        mediaController.setAnchorView(videoView);
-
-        videoView.requestFocus();
-        videoView.start();
-    }
-
-    private void downloadVideo(String urlStr, File outputFile) {
-        progressBar.setVisibility(View.VISIBLE);
-        videoView.setVisibility(View.GONE);
-
+    private void downloadVideo(String url, File outputFile) {
         new Thread(() -> {
             try {
-                URL url = new URL(urlStr);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.connect();
+                java.net.URL videoUrl = new java.net.URL(url);
+                java.net.URLConnection conn = videoUrl.openConnection();
+                java.io.InputStream in = conn.getInputStream();
+                java.io.FileOutputStream out = new java.io.FileOutputStream(outputFile);
 
-                int fileLength = connection.getContentLength();
-
-                InputStream input = connection.getInputStream();
-                FileOutputStream output = new FileOutputStream(outputFile);
-
-                byte[] data = new byte[4096];
-                int total = 0;
-                int count;
-
-                Handler handler = new Handler(getMainLooper());
-
-                while ((count = input.read(data)) != -1) {
-                    total += count;
-                    output.write(data, 0, count);
-
-                    if (fileLength > 0) {
-                        int progress = (int) (total * 100L / fileLength);
-                        handler.post(() -> progressBar.setProgress(progress));
-                    }
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, len);
                 }
 
-                output.flush();
-                output.close();
-                input.close();
+                in.close();
+                out.close();
 
-                handler.post(() -> playVideo(outputFile));
+                new Handler(getMainLooper()).post(() -> {
+                    progressBar.setVisibility(ProgressBar.GONE);
+                    playVideo(outputFile);
+                });
 
             } catch (Exception e) {
                 e.printStackTrace();
-                Handler handler = new Handler(getMainLooper());
-                handler.post(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    // Optionally show an error message here
-                });
             }
         }).start();
+    }
+
+    private void playVideo(File file) {
+        Uri uri = Uri.fromFile(file);
+        videoView.setVideoURI(uri);
+        MediaController mediaController = new MediaController(this);
+        videoView.setMediaController(mediaController);
+        videoView.start();
     }
 }
