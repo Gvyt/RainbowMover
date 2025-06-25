@@ -51,7 +51,8 @@ jobs:
 
     - name: Convert classes to dex
       run: |
-        $ANDROID_HOME/build-tools/34.0.0/d8 --output=classes.dex obj/
+        $ANDROID_HOME/build-tools/34.0.0/d8 --output . $(find obj -name "*.class")
+
 
     - name: Create unsigned APK
       run: |
@@ -92,7 +93,7 @@ jobs:
         if [ -f RainbowMover_signed.apk ]; then
           mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
         else
-          echo "❌ Signed APK not found!"
+          echo "❌ Signed APK not found! You messed up :D!"
           exit 1
         fi
 
