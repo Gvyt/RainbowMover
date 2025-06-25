@@ -3,7 +3,6 @@ package com.gvyoutube.rainbowmover;
 import android.app.Activity;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
 import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.VideoView;
@@ -32,7 +31,7 @@ public class MainActivity extends Activity {
 
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
-            public void onPrepared(final MediaPlayer mp) {
+            public void onPrepared(MediaPlayer mp) {
                 progressBar.setVisibility(ProgressBar.GONE);
                 videoView.start();
             }
@@ -41,8 +40,7 @@ public class MainActivity extends Activity {
         videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                // Optionally restart or do something on video end
-                videoView.start();
+                videoView.start(); // loop video
             }
         });
     }
