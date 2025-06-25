@@ -1,4 +1,4 @@
-name: Manual Android Build (No Gradle)
+name: Manual Android Build (No Gradle, with R.java generation)
 
 on:
   workflow_dispatch:
@@ -32,64 +32,18 @@ jobs:
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;34.0.0"
 
     - name: Generate R.java with aapt
-  run: |
-    mkdir -p src
-    $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m -J src \
-      -M AndroidManifest.xml \
-      -S res \
-      -I $ANDROID_HOME/platforms/android-33/android.jar
+      run: |
+        mkdir -p src
+        $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m -J src \
+          -M AndroidManifest.xml \
+          -S res \
+          -I $ANDROID_HOME/platforms/android-33/android.jar
 
-
-    - name: Compile Java source
+    - name: Compile Java source (including generated R.java)
       run: |
         mkdir -p obj
         javac -source 1.8 -target 1.8 -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar -d obj $(find src -name "*.java")
-        $ANDROID_HOME/build-tools/34.0.0/d8 --output=classes.dex obj/
 
-    - name: Compile resources
+    - name: Convert classes to dex
       run: |
-        $ANDROID_HOME/build-tools/34.0.0/aapt package -f \
-          -M AndroidManifest.xml \
-          -S res \
-          -I $ANDROID_HOME/platforms/android-33/android.jar \
-          -F unsigned.apk obj
-
-    - name: Add classes.dex to APK
-      run: |
-        zip -j unsigned.apk classes.dex
-
-    - name: Sign APK with debug key
-      run: |
-        keytool -genkey -v \
-          -keystore debug.keystore \
-          -alias androiddebugkey \
-          -storepass android \
-          -keypass android \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -dname "CN=Android Debug,O=Android,C=US"
-        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
-          --ks debug.keystore \
-          --ks-pass pass:android \
-          --key-pass pass:android \
-          --out RainbowMover_signed.apk unsigned.apk
-
-    - name: Extract version from AndroidManifest.xml
-      id: version
-      run: |
-        version=$(grep -oP 'versionName="\\K[^"]+' AndroidManifest.xml)
-        echo "version=${version}" >> $GITHUB_OUTPUT
-
-    - name: Rename APK with version
-      run: |
-        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
-
-    - name: Create GitHub Release and Upload APK
-      uses: softprops/action-gh-release@v2
-      with:
-        name: RainbowMover v${{ steps.version.outputs.version }}
-        tag_name: v${{ steps.version.outputs.version }}
-        files: RainbowMover_${{ steps.version.outputs.version }}.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        $ANDROID_HO_
