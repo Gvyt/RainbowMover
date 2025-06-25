@@ -64,10 +64,23 @@ jobs:
           --ks debug.keystore \
           --ks-pass pass:android \
           --key-pass pass:android \
-          --out signed.apk unsigned.apk
+          --out RainbowMover_signed.apk unsigned.apk
 
-    - name: Upload signed APK
-      uses: actions/upload-artifact@v3
+    - name: Extract version from AndroidManifest.xml
+      id: version
+      run: |
+        version=$(grep -oP 'versionName="\\K[^"]+' AndroidManifest.xml)
+        echo "version=${version}" >> $GITHUB_OUTPUT
+
+    - name: Rename APK with version
+      run: |
+        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+
+    - name: Create GitHub Release and Upload APK
+      uses: softprops/action-gh-release@v2
       with:
-        name: RainbowMover
-        path: signed.apk
+        name: RainbowMover v${{ steps.version.outputs.version }}
+        tag_name: v${{ steps.version.outputs.version }}
+        files: RainbowMover_${{ steps.version.outputs.version }}.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
