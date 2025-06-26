@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Needed to create tags and releases
+  contents: write
 
 jobs:
   build:
@@ -65,8 +65,7 @@ jobs:
           -F unsigned.apk obj
 
     - name: Add classes.dex to APK
-      run: |
-        zip -j unsigned.apk classes.dex
+      run: zip -j unsigned.apk classes.dex
 
     - name: Generate debug keystore
       run: |
@@ -88,49 +87,54 @@ jobs:
           --key-pass pass:android \
           --out RainbowMover_signed.apk unsigned.apk
 
-    - name: Align APK for release
+    - name: Verify APK Signature
       run: |
-        set -e
-        echo "Running zipalign..."
-        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk || { echo "zipalign failed!"; exit 1; }
-        mv RainbowMover_aligned.apk RainbowMover_signed.apk
-        echo "APK aligned successfully."
-
-    - name: Verify signed APK
-      run: |
-        if [ ! -f RainbowMover_signed.apk ]; then
-          echo "Signed APK not found!"
+        echo "🔍 Verifying APK signature..."
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_signed.apk || {
+          echo "❌ APK signature verification failed!"
           exit 1
-        fi
-        echo "Signed APK exists:"
-        ls -lh RainbowMover_signed.apk
+        }
 
-    - name: Extract version from AndroidManifest.xml
+    - name: Align APK
+      run: |
+        echo "📦 Aligning APK..."
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk || {
+          echo "❌ APK alignment failed!"
+          exit 1
+        }
+
+    - name: Final APK Signature Check
+      run: |
+        echo "✅ Verifying final APK integrity..."
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_aligned.apk || {
+          echo "❌ Final APK failed verification!"
+          exit 1
+        }
+
+    - name: Extract version from manifest
       id: version
       run: |
-        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
+        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml || echo "1.0")
         echo "version=$version"
         echo "version=$version" >> $GITHUB_OUTPUT
 
-    - name: Rename signed APK
-      run: |
-        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+    - name: Rename final APK
+      run: mv RainbowMover_aligned.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
-    - name: Verify APK exists
-      run: |
-        ls -lh RainbowMover_${{ steps.version.outputs.version }}.apk
+    - name: List output
+      run: ls -lh RainbowMover_*.apk
 
     - name: Configure git user
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
 
-    - name: Create and push git tag (force update if exists)
+    - name: Create and push tag (force if exists)
       run: |
         git tag -f v${{ steps.version.outputs.version }}
         git push origin -f v${{ steps.version.outputs.version }}
 
-    - name: Create GitHub Release and upload APK
+    - name: Upload to GitHub Releases
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
