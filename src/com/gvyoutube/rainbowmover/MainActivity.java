@@ -71,14 +71,17 @@ public class MainActivity extends Activity {
     }
 });
 
-        startButton.setOnClickListener(v -> {
-            startScreen.setVisibility(View.GONE);
-            loadingText.setVisibility(View.VISIBLE);
-            progressBar.setVisibility(View.VISIBLE);
-            loadingText.setText("Downloading Video, please wait...");
-            downloadAndPlayVideo();
-        });
-
+startButton.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        startScreen.setVisibility(View.GONE);
+        loadingText.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.VISIBLE);
+        loadingText.setText("Downloading Video, please wait...");
+        downloadAndPlayVideo();
+    }
+});
+        
         optionsButton.setOnClickListener(v -> {
             if (optionsLayout.getVisibility() == View.VISIBLE) {
                 optionsLayout.setVisibility(View.GONE);
