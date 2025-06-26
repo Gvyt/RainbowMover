@@ -98,7 +98,7 @@ jobs:
     - name: Verify signed APK
       run: |
         echo "✅ Verifying final APK integrity..."
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_signed.apk || {
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_aligned.apk || {
           echo "❌ Final APK failed verification!"
           exit 1
         }
