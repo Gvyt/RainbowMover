@@ -1,106 +1,123 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.media.MediaPlayer;
-import android.net.Uri;
+import android.content.pm.ActivityInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.MediaController;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.Toast;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.VideoView;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import android.net.Uri;
+import android.widget.MediaController;
 
 public class MainActivity extends Activity {
 
+    private ImageView splashImage;
+    private TextView splashText;
+    private RelativeLayout splashLayout;
+    private LinearLayout startScreenLayout;
+    private Button startButton, optionsButton;
+    private LinearLayout optionsLayout;
+    private CheckBox rotateCheckbox, moveCheckbox, normalCheckbox;
+    private ProgressBar loadingBar;
+    private TextView loadingText;
     private VideoView videoView;
-    private ProgressBar progressBar;
-    private static final String videoUrl = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
-    private static final String localFileName = "appvid.mp4";
+
+    private final String videoUrl = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
-        videoView = (VideoView) findViewById(R.id.videoView);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        // Splash screen
+        splashImage = findViewById(R.id.splashImage);
+        splashText = findViewById(R.id.splashText);
+        splashLayout = findViewById(R.id.splashLayout);
+        startScreenLayout = findViewById(R.id.startScreenLayout);
+        startButton = findViewById(R.id.startButton);
+        optionsButton = findViewById(R.id.optionsButton);
+        optionsLayout = findViewById(R.id.optionsLayout);
+        rotateCheckbox = findViewById(R.id.rotateCheckbox);
+        moveCheckbox = findViewById(R.id.moveCheckbox);
+        normalCheckbox = findViewById(R.id.normalCheckbox);
+        loadingBar = findViewById(R.id.progressBar);
+        loadingText = findViewById(R.id.loadingText);
+        videoView = findViewById(R.id.videoView);
 
-        downloadVideo(videoUrl, new File(getFilesDir(), localFileName));
-    }
+        splashLayout.setVisibility(View.VISIBLE);
+        startScreenLayout.setVisibility(View.GONE);
+        videoView.setVisibility(View.GONE);
+        loadingText.setVisibility(View.GONE);
+        loadingBar.setVisibility(View.GONE);
 
-    private void downloadVideo(final String urlString, final File outputFile) {
-        progressBar.setVisibility(ProgressBar.VISIBLE);
+        Animation fadeIn = new AlphaAnimation(0, 1);
+        fadeIn.setDuration(1000);
+        Animation fadeOut = new AlphaAnimation(1, 0);
+        fadeOut.setStartOffset(2500);
+        fadeOut.setDuration(1000);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    URL url = new URL(urlString);
-                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                    urlConnection.connect();
+        splashLayout.startAnimation(fadeIn);
+        splashLayout.setAnimation(fadeOut);
 
-                    InputStream inputStream = new BufferedInputStream(urlConnection.getInputStream());
-                    FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            splashLayout.setVisibility(View.GONE);
+            startScreenLayout.setVisibility(View.VISIBLE);
+        }, 3500);
 
-                    byte[] buffer = new byte[1024];
-                    int len;
-                    while ((len = inputStream.read(buffer)) != -1) {
-                        fileOutputStream.write(buffer, 0, len);
-                    }
+        normalCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            rotateCheckbox.setEnabled(!isChecked);
+            moveCheckbox.setEnabled(!isChecked);
+        });
 
-                    fileOutputStream.close();
-                    inputStream.close();
+        startButton.setOnClickListener(v -> {
+            startScreenLayout.setVisibility(View.GONE);
+            loadingText.setVisibility(View.VISIBLE);
+            loadingBar.setVisibility(View.VISIBLE);
 
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            progressBar.setVisibility(ProgressBar.GONE);
-                            playVideo(outputFile);
-                        }
-                    });
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
-                        @Override
-                        public void run() {
-                            progressBar.setVisibility(ProgressBar.GONE);
-                            Toast.makeText(MainActivity.this, "Failed to download video: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                loadingBar.setVisibility(View.GONE);
+                loadingText.setVisibility(View.GONE);
+                videoView.setVisibility(View.VISIBLE);
+
+                if (rotateCheckbox.isChecked()) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                 }
-            }
-        }).start();
-    }
 
-    private void playVideo(File file) {
-        Uri videoUri = Uri.fromFile(file);
+                MediaController controller = new MediaController(this);
+                controller.setAnchorView(videoView);
+                videoView.setMediaController(controller);
+                videoView.setVideoURI(Uri.parse(videoUrl));
+                videoView.setOnPreparedListener(mp -> {
+                    videoView.start();
 
-        videoView.setVideoURI(videoUri);
-        MediaController mediaController = new MediaController(this);
-        mediaController.setAnchorView(videoView);
-        videoView.setMediaController(mediaController);
+                    if (moveCheckbox.isChecked()) {
+                        animateVideo();
+                    }
+                });
 
-        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                videoView.start();
-            }
+            }, 3000); // Simulate download
         });
 
-        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(MediaPlayer mp, int what, int extra) {
-                Toast.makeText(MainActivity.this, "Can't play the downloaded video.", Toast.LENGTH_LONG).show();
-                return true;
+        optionsButton.setOnClickListener(v -> {
+            if (optionsLayout.getVisibility() == View.VISIBLE) {
+                optionsLayout.setVisibility(View.GONE);
+            } else {
+                optionsLayout.setVisibility(View.VISIBLE);
             }
         });
     }
-}
+
+    private void animateVideo() {
+        videoView.animate().translationXBy(100).translationYBy(100).set
