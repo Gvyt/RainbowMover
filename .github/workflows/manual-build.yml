@@ -79,34 +79,26 @@ jobs:
           -validity 10000 \
           -dname "CN=Android Debug,O=Android,C=US"
 
-    - name: Sign APK
+    - name: Align APK before signing
       run: |
+        echo "📦 Aligning APK..."
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 unsigned.apk aligned_unsigned.apk
+
+    - name: Sign APK (v1 + v2 signing)
+      run: |
+        echo "🔐 Signing APK with v1 and v2..."
         $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
           --ks debug.keystore \
           --ks-pass pass:android \
           --key-pass pass:android \
-          --out RainbowMover_signed.apk unsigned.apk
+          --v1-signing-enabled true \
+          --v2-signing-enabled true \
+          --out RainbowMover_signed.apk aligned_unsigned.apk
 
-    - name: Verify APK Signature
-      run: |
-        echo "🔍 Verifying APK signature..."
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_signed.apk || {
-          echo "❌ APK signature verification failed!"
-          exit 1
-        }
-
-    - name: Align APK
-      run: |
-        echo "📦 Aligning APK..."
-        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk || {
-          echo "❌ APK alignment failed!"
-          exit 1
-        }
-
-    - name: Final APK Signature Check
+    - name: Verify signed APK
       run: |
         echo "✅ Verifying final APK integrity..."
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_aligned.apk || {
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_signed.apk || {
           echo "❌ Final APK failed verification!"
           exit 1
         }
