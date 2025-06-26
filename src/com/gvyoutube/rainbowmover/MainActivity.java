@@ -1,123 +1,185 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.content.pm.ActivityInfo;
-import android.graphics.drawable.Drawable;
+import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
-import android.net.Uri;
-import android.widget.MediaController;
+import java.io.BufferedInputStream;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.HttpURLConnection;
 
 public class MainActivity extends Activity {
 
-    private ImageView splashImage;
-    private TextView splashText;
-    private RelativeLayout splashLayout;
-    private LinearLayout startScreenLayout;
-    private Button startButton, optionsButton;
-    private LinearLayout optionsLayout;
-    private CheckBox rotateCheckbox, moveCheckbox, normalCheckbox;
-    private ProgressBar loadingBar;
-    private TextView loadingText;
     private VideoView videoView;
+    private ProgressBar progressBar;
+    private TextView loadingText;
+    private LinearLayout splashScreen, titleScreen, optionLayout;
+    private Button startButton, optionsButton;
+    private CheckBox rotationBox, movementBox, normalBox;
+    private boolean rotationEnabled = false;
+    private boolean movementEnabled = false;
 
-    private final String videoUrl = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
+    private static final String VIDEO_URL = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
+    private static final String VIDEO_FILENAME = "video.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
-        // Splash screen
-        splashImage = findViewById(R.id.splashImage);
-        splashText = findViewById(R.id.splashText);
-        splashLayout = findViewById(R.id.splashLayout);
-        startScreenLayout = findViewById(R.id.startScreenLayout);
+        splashScreen = findViewById(R.id.splashScreen);
+        titleScreen = findViewById(R.id.titleScreen);
+        optionLayout = findViewById(R.id.optionsLayout);
         startButton = findViewById(R.id.startButton);
         optionsButton = findViewById(R.id.optionsButton);
-        optionsLayout = findViewById(R.id.optionsLayout);
-        rotateCheckbox = findViewById(R.id.rotateCheckbox);
-        moveCheckbox = findViewById(R.id.moveCheckbox);
-        normalCheckbox = findViewById(R.id.normalCheckbox);
-        loadingBar = findViewById(R.id.progressBar);
-        loadingText = findViewById(R.id.loadingText);
+        rotationBox = findViewById(R.id.checkboxRotation);
+        movementBox = findViewById(R.id.checkboxMovement);
+        normalBox = findViewById(R.id.checkboxNormal);
         videoView = findViewById(R.id.videoView);
+        progressBar = findViewById(R.id.progressBar);
+        loadingText = findViewById(R.id.loadingText);
 
-        splashLayout.setVisibility(View.VISIBLE);
-        startScreenLayout.setVisibility(View.GONE);
-        videoView.setVisibility(View.GONE);
-        loadingText.setVisibility(View.GONE);
-        loadingBar.setVisibility(View.GONE);
+        showSplash();
+        setupButtons();
+        setupCheckboxes();
+    }
 
-        Animation fadeIn = new AlphaAnimation(0, 1);
+    private void showSplash() {
+        splashScreen.setVisibility(View.VISIBLE);
+        AlphaAnimation fadeIn = new AlphaAnimation(0, 1);
         fadeIn.setDuration(1000);
-        Animation fadeOut = new AlphaAnimation(1, 0);
-        fadeOut.setStartOffset(2500);
+        AlphaAnimation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setDuration(1000);
+        fadeOut.setStartOffset(2000);
 
-        splashLayout.startAnimation(fadeIn);
-        splashLayout.setAnimation(fadeOut);
+        splashScreen.startAnimation(fadeIn);
+        splashScreen.startAnimation(fadeOut);
 
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            splashLayout.setVisibility(View.GONE);
-            startScreenLayout.setVisibility(View.VISIBLE);
-        }, 3500);
+        new Handler().postDelayed(() -> {
+            splashScreen.setVisibility(View.GONE);
+            titleScreen.setVisibility(View.VISIBLE);
+        }, 3000);
+    }
 
-        normalCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            rotateCheckbox.setEnabled(!isChecked);
-            moveCheckbox.setEnabled(!isChecked);
-        });
-
+    private void setupButtons() {
         startButton.setOnClickListener(v -> {
-            startScreenLayout.setVisibility(View.GONE);
+            titleScreen.setVisibility(View.GONE);
             loadingText.setVisibility(View.VISIBLE);
-            loadingBar.setVisibility(View.VISIBLE);
-
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                loadingBar.setVisibility(View.GONE);
-                loadingText.setVisibility(View.GONE);
-                videoView.setVisibility(View.VISIBLE);
-
-                if (rotateCheckbox.isChecked()) {
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-                }
-
-                MediaController controller = new MediaController(this);
-                controller.setAnchorView(videoView);
-                videoView.setMediaController(controller);
-                videoView.setVideoURI(Uri.parse(videoUrl));
-                videoView.setOnPreparedListener(mp -> {
-                    videoView.start();
-
-                    if (moveCheckbox.isChecked()) {
-                        animateVideo();
-                    }
-                });
-
-            }, 3000); // Simulate download
+            progressBar.setVisibility(View.VISIBLE);
+            downloadVideo(VIDEO_URL, new File(getFilesDir(), VIDEO_FILENAME));
         });
 
         optionsButton.setOnClickListener(v -> {
-            if (optionsLayout.getVisibility() == View.VISIBLE) {
-                optionsLayout.setVisibility(View.GONE);
+            if (optionLayout.getVisibility() == View.VISIBLE) {
+                optionLayout.setVisibility(View.GONE);
             } else {
-                optionsLayout.setVisibility(View.VISIBLE);
+                optionLayout.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void setupCheckboxes() {
+        normalBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            rotationBox.setEnabled(!isChecked);
+            movementBox.setEnabled(!isChecked);
+            if (isChecked) {
+                rotationBox.setChecked(false);
+                movementBox.setChecked(false);
+            }
+        });
+
+        rotationBox.setOnCheckedChangeListener((b, isChecked) -> {
+            if (!normalBox.isChecked()) rotationEnabled = isChecked;
+        });
+
+        movementBox.setOnCheckedChangeListener((b, isChecked) -> {
+            if (!normalBox.isChecked()) movementEnabled = isChecked;
+        });
+    }
+
+    private void downloadVideo(String urlStr, File outputFile) {
+        new Thread(() -> {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+                conn.connect();
+
+                int contentLength = conn.getContentLength();
+                InputStream is = new BufferedInputStream(conn.getInputStream());
+                FileOutputStream fos = new FileOutputStream(outputFile);
+
+                byte[] buffer = new byte[1024];
+                int len, downloaded = 0;
+
+                while ((len = is.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                    downloaded += len;
+                    int progress = (int) (downloaded * 100.0 / contentLength);
+                    int finalProgress = progress;
+                    new Handler(Looper.getMainLooper()).post(() -> progressBar.setProgress(finalProgress));
+                }
+
+                fos.flush();
+                fos.close();
+                is.close();
+
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    loadingText.setVisibility(View.GONE);
+                    playVideo(Uri.fromFile(outputFile));
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void playVideo(Uri uri) {
+        MediaController mediaController = new MediaController(this);
+        mediaController.setAnchorView(videoView);
+
+        videoView.setMediaController(mediaController);
+        videoView.setVideoURI(uri);
+        videoView.requestFocus();
+        videoView.setOnPreparedListener(mp -> {
+            if (rotationEnabled) {
+                videoView.setRotation(90f);
+            }
+            videoView.start();
+            if (movementEnabled) {
+                animateVideo();
             }
         });
     }
 
     private void animateVideo() {
-        videoView.animate().translationXBy(100).translationYBy(100).set
+        videoView.animate()
+                .translationXBy(100)
+                .translationYBy(100)
+                .setDuration(1000)
+                .withEndAction(() -> {
+                    videoView.animate()
+                            .translationXBy(-200)
+                            .translationYBy(-200)
+                            .setDuration(1000)
+                            .start();
+                })
+                .start();
+    }
+}
