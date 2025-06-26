@@ -5,6 +5,25 @@ I dunno.
 I was bored :(
 # Required Specs
 You need a video playing capable Android device with Android 10+ (Android SDK 29+).
+# Common Issues, and how to Fix them.
+**App not installed.** </br>
+This may be due to a bug in the APK. It is unfixable until a new version is pushed.
+**App not installed as it conflicts with an existing package** </br>
+Commonly happens when trying to install as an update to the APK when already installed. </br>
+Uninstall the app, then try again.</br>
+**Package file is invalid/There was a problem parsing the package.** </br>
+Same as App not installed, and is a problem with the manifest. Create an issue to let me know. </br>
+**Failed to install [name].apk on device: timeout** </br>
+This means that your phone sent a timeout request because installation was taking too long. Try again to fix.</br>
+**Insuffitent Storage** </br>
+self explanitory.
+## ADB Errors
+**INSTALL_FAILED_ALREADY_EXISTS** </br>
+The app exists already.</br>
+**INSTALL_FAILED_INAVLID_APK** </br>
+Same as App not installed. </br>
+**INSTALL_FAILED_NO_MATCHING_ABIS** </br>
+The java libraries on the app arent compatible with your phone/device.</br>
 # FAQ
 *Q: Still, why?*
 A: i was bored i just said that
