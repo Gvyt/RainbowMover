@@ -43,31 +43,48 @@ public class MainActivity extends Activity {
     private Handler handler = new Handler();
     private Random random = new Random();
 
+    private Runnable moveRunnable;
+    private Runnable rotateRunnable;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        videoView = findViewById(R.id.videoView);
-        progressBar = findViewById(R.id.progressBar);
-        loadingText = findViewById(R.id.loadingText);
-        startScreen = findViewById(R.id.startScreen);
-        startButton = findViewById(R.id.startButton);
-        optionsButton = findViewById(R.id.optionsButton);
-        optionsLayout = findViewById(R.id.optionsLayout);
-        rotationCheckbox = findViewById(R.id.rotationCheckbox);
-        movementCheckbox = findViewById(R.id.movementCheckbox);
-        normalPlaybackCheckbox = findViewById(R.id.normalPlaybackCheckbox);
+        videoView = (VideoView) findViewById(R.id.videoView);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        loadingText = (TextView) findViewById(R.id.loadingText);
+        startScreen = (LinearLayout) findViewById(R.id.startScreen);
+        startButton = (Button) findViewById(R.id.startButton);
+        optionsButton = (Button) findViewById(R.id.optionsButton);
+        optionsLayout = (LinearLayout) findViewById(R.id.optionsLayout);
+        rotationCheckbox = (CheckBox) findViewById(R.id.rotationCheckbox);
+        movementCheckbox = (CheckBox) findViewById(R.id.movementCheckbox);
+        normalPlaybackCheckbox = (CheckBox) findViewById(R.id.normalPlaybackCheckbox);
 
-        // Enable Movement by default
         movementCheckbox.setChecked(true);
         updateOptionsState();
 
         normalPlaybackCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                rotationCheckbox.setEnabled(!isChecked);
-                movementCheckbox.setEnabled(!isChecked);
+                updateOptionsState();
+            }
+        });
+
+        rotationCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (normalPlaybackCheckbox.isChecked()) return;
+                // No extra action needed here
+            }
+        });
+
+        movementCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (normalPlaybackCheckbox.isChecked()) return;
+                // No extra action needed here
             }
         });
 
@@ -149,12 +166,12 @@ public class MainActivity extends Activity {
                         }
                     });
 
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     e.printStackTrace();
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Error downloading video", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, "Error downloading video: " + e.getMessage(), Toast.LENGTH_LONG).show();
                             loadingText.setText("Failed to download video.");
                             progressBar.setVisibility(View.GONE);
                         }
@@ -176,9 +193,13 @@ public class MainActivity extends Activity {
                 videoView.start();
                 if (movementCheckbox.isChecked()) {
                     startMovingVideo();
+                } else {
+                    stopMovingVideo();
                 }
                 if (rotationCheckbox.isChecked()) {
                     startRotatingVideo();
+                } else {
+                    stopRotatingVideo();
                 }
             }
         });
@@ -196,20 +217,35 @@ public class MainActivity extends Activity {
         final int screenWidth = getResources().getDisplayMetrics().widthPixels;
         final int screenHeight = getResources().getDisplayMetrics().heightPixels;
 
-        final Runnable moveRunnable = new Runnable() {
+        if (moveRunnable != null) handler.removeCallbacks(moveRunnable);
+
+        moveRunnable = new Runnable() {
             @Override
             public void run() {
-                int x = random.nextInt(screenWidth - videoView.getWidth());
-                int y = random.nextInt(screenHeight - videoView.getHeight());
+                if (!videoView.isShown()) return;
+
+                int x = random.nextInt(Math.max(screenWidth - videoView.getWidth(), 1));
+                int y = random.nextInt(Math.max(screenHeight - videoView.getHeight(), 1));
+
                 videoView.animate().x(x).y(y).setDuration(3000).start();
+
                 handler.postDelayed(this, 3500);
             }
         };
         handler.post(moveRunnable);
     }
 
+    private void stopMovingVideo() {
+        if (moveRunnable != null) {
+            handler.removeCallbacks(moveRunnable);
+            moveRunnable = null;
+        }
+    }
+
     private void startRotatingVideo() {
-        Runnable rotateRunnable = new Runnable() {
+        if (rotateRunnable != null) handler.removeCallbacks(rotateRunnable);
+
+        rotateRunnable = new Runnable() {
             float rotation = 0f;
 
             @Override
@@ -220,5 +256,23 @@ public class MainActivity extends Activity {
             }
         };
         handler.post(rotateRunnable);
+    }
+
+    private void stopRotatingVideo() {
+        if (rotateRunnable != null) {
+            handler.removeCallbacks(rotateRunnable);
+            rotateRunnable = null;
+            videoView.setRotation(0f);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopMovingVideo();
+        stopRotatingVideo();
+        if (videoView != null) {
+            videoView.stopPlayback();
+        }
     }
 }
