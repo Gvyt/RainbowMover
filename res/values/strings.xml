@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">RainbowMover</string>
     <string name="app_icon_desc">App Icon</string>
+    <string name="splash_text">Made by GvYoutube</string>
+    <string name="start_button">Start</string>
+    <string name="options_button">Options</string>
+    <string name="downloading_text">Downloading Video, please wait...</string>
+    <string name="normal_playback">Normal Playback</string>
+    <string name="rotation">Rotation</string>
+    <string name="movement">Movement</string>
 </resources>
