@@ -24,10 +24,5 @@
 
     </application>
 
-    <!-- Version numbers -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <versionCode>2</versionCode>
-    <versionName>2.0</versionName>
-
 </manifest>
 
