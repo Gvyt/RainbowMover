@@ -93,7 +93,7 @@ jobs:
           --key-pass pass:android \
           --v1-signing-enabled true \
           --v2-signing-enabled true \
-          --out RainbowMover_signed.apk aligned_unsigned.apk
+          --out RainbowMover_aligned.apk aligned_unsigned.apk
 
     - name: Verify signed APK
       run: |
