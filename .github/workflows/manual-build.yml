@@ -52,7 +52,7 @@ jobs:
           -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar \
           -d obj $(find src -name "*.java")
 
-    - name: Convert classes to dex
+    - name: Convert classes to DEX
       run: |
         $ANDROID_HOME/build-tools/34.0.0/d8 --output . $(find obj -name "*.class")
 
@@ -65,37 +65,36 @@ jobs:
           -F unsigned.apk obj
 
     - name: Add classes.dex to APK
-      run: zip -j unsigned.apk classes.dex
-
-    - name: Generate debug keystore
       run: |
-        keytool -genkey -v \
-          -keystore debug.keystore \
-          -alias androiddebugkey \
-          -storepass android \
-          -keypass android \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -dname "CN=Android Debug,O=Android,C=US"
+        zip -j unsigned.apk classes.dex
 
-    - name: Align APK before signing
+    - name: Generate debug keystore if missing
       run: |
-        echo "📦 Aligning APK..."
-        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 unsigned.apk aligned_unsigned.apk
+        if [ ! -f debug.keystore ]; then
+          keytool -genkey -v \
+            -keystore debug.keystore \
+            -alias androiddebugkey \
+            -storepass android \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+        fi
 
-    - name: Sign APK (v1 + v2 signing)
+    - name: Sign APK
       run: |
-        echo "🔐 Signing APK with v1 and v2..."
         $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
           --ks debug.keystore \
           --ks-pass pass:android \
           --key-pass pass:android \
-          --v1-signing-enabled true \
-          --v2-signing-enabled true \
-          --out RainbowMover_aligned.apk aligned_unsigned.apk
+          --out RainbowMover_signed.apk unsigned.apk
 
-    - name: Verify signed APK
+    - name: Align APK
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk
+
+    - name: Verify APK signature and integrity
       run: |
         echo "✅ Verifying final APK integrity..."
         $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_aligned.apk || {
@@ -103,35 +102,33 @@ jobs:
           exit 1
         }
 
-    - name: Extract version from manifest
+    - name: Extract version from AndroidManifest.xml
       id: version
       run: |
-        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml || echo "1.0")
+        version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
         echo "version=$version"
         echo "version=$version" >> $GITHUB_OUTPUT
 
     - name: Rename final APK
-      run: mv RainbowMover_aligned.apk RainbowMover_${{ steps.version.outputs.version }}.apk
-
-    - name: List output
-      run: ls -lh RainbowMover_*.apk
+      run: |
+        mv RainbowMover_aligned.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
     - name: Configure git user
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
 
-    - name: Create and push tag (force if exists)
+    - name: Create and push git tag (force)
       run: |
         git tag -f v${{ steps.version.outputs.version }}
         git push origin -f v${{ steps.version.outputs.version }}
 
-    - name: Upload to GitHub Releases
+    - name: Create GitHub Release and upload APK
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}
+        body: Auto-generated release
         files: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
