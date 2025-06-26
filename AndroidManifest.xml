@@ -10,12 +10,12 @@
 
     <application
         android:label="RainbowMover"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/appicon"
         android:allowBackup="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.Light.NoActionBar">
 
         <activity android:name=".SplashActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.Light.NoActionBar"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -24,7 +24,7 @@
         </activity>
 
         <activity android:name=".MainActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.Light.NoActionBar"
             android:exported="true" />
 
     </application>
