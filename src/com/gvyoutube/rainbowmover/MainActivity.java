@@ -1,7 +1,6 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.widget.CompoundButton;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -10,6 +9,7 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
