@@ -1,20 +1,31 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.gvyoutube.rainbowmover"
-    android:versionCode="2"
-    android:versionName="2.0">
+    package="com.gvyoutube.rainbowmover">
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Version info -->
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="33" />
     <application
-        android:label="Rainbow Mover"
         android:icon="@mipmap/appicon"
-        android:theme="@android:style/Theme.Light.NoTitleBar">
-        <activity android:name=".MainActivity"
-            android:exported="true">
+        android:label="@string/app_name"
+        android:allowBackup="true"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen">
+
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
+
+    <!-- Version numbers -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <versionCode>2</versionCode>
+    <versionName>2.0</versionName>
+
 </manifest>
+
