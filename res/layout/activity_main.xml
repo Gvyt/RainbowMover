@@ -1,74 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mainLayout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#000000">
 
+    <!-- Start Screen -->
     <LinearLayout
-        android:id="@+id/titleScreen"
+        android:id="@+id/startScreen"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:visibility="visible">
+        android:background="#000000"
+        android:visibility="visible"
+        android:padding="24dp">
 
         <TextView
+            android:id="@+id/appTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="RainbowMover"
+            android:textColor="#FFFFFF"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:layout_marginBottom="20dp"
-            android:gravity="center" />
+            android:layout_marginBottom="24dp" />
 
         <Button
             android:id="@+id/startButton"
-            android:text="Start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"/>
+            android:text="Start" />
 
         <Button
             android:id="@+id/optionsButton"
-            android:text="Options"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="Options"
+            android:layout_marginTop="12dp" />
+
+        <LinearLayout
+            android:id="@+id/optionsLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="12dp">
+
+            <CheckBox
+                android:id="@+id/rotationCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enable Rotation" />
+
+            <CheckBox
+                android:id="@+id/movementCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enable Movement" />
+
+            <CheckBox
+                android:id="@+id/normalPlaybackCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Normal Playback" />
+        </LinearLayout>
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/optionsLayout"
-        android:orientation="vertical"
-        android:visibility="gone"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/startButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <CheckBox android:id="@+id/rotationCheckbox" android:text="Enable Rotation"/>
-        <CheckBox android:id="@+id/movementCheckbox" android:text="Enable Movement"/>
-        <CheckBox android:id="@+id/normalCheckbox" android:text="Normal Playback"/>
-    </LinearLayout>
-
+    <!-- Loading Text -->
     <TextView
-        android:id="@+id/downloadStatus"
+        android:id="@+id/loadingText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Downloading Video, please wait..."
-        android:visibility="gone"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
-        android:layout_alignParentTop="true" />
+        android:text="Downloading Video..."
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="40dp"
+        android:visibility="gone" />
 
+    <!-- Progress Bar -->
     <ProgressBar
-        android:id="@+id/loadingBar"
-        android:layout_width="wrap_content"
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/downloadStatus" />
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="80dp"
+        android:visibility="gone" />
 
+    <!-- Video View -->
     <VideoView
         android:id="@+id/videoView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"/>
-</RelativeLayout>
+        android:visibility="visible" />
+</FrameLayout>
