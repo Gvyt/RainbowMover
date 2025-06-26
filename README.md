@@ -15,7 +15,7 @@ A: i refuse to spend 873268763468623486999 hours trying to get a Mac to work aga
 
 *Q: OKAY GOD! But what are the files with "gradle" in them?**
 A: Its the files to have the YML build the APK for release.
-# Docs | How to make RainbowoOver your own!
+# Docs | How to make RainbowMover your own!
 **Step 1**
 Go to the MainActivity.java file, and change the package name from
 ``package com.gvyoutube.rainbowmover``
