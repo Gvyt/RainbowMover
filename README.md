@@ -3,6 +3,8 @@ A pretty much useless app that plays and moves the peak of memes.
 # But why?
 I dunno.
 I was bored :(
+# Required Specs
+You need a video playing capable Android device with Android 10+ (Android SDK 29+).
 # FAQ
 *Q: Still, why?*
 A: i was bored i just said that
