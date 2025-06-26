@@ -64,29 +64,32 @@ public class MainActivity extends Activity {
         updateOptionsState();
 
         normalPlaybackCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-    @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        rotationCheckbox.setEnabled(!isChecked);
-        movementCheckbox.setEnabled(!isChecked);
-    }
-});
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                rotationCheckbox.setEnabled(!isChecked);
+                movementCheckbox.setEnabled(!isChecked);
+            }
+        });
 
-startButton.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View v) {
-        startScreen.setVisibility(View.GONE);
-        loadingText.setVisibility(View.VISIBLE);
-        progressBar.setVisibility(View.VISIBLE);
-        loadingText.setText("Downloading Video, please wait...");
-        downloadAndPlayVideo();
-    }
-});
-        
-        optionsButton.setOnClickListener(v -> {
-            if (optionsLayout.getVisibility() == View.VISIBLE) {
-                optionsLayout.setVisibility(View.GONE);
-            } else {
-                optionsLayout.setVisibility(View.VISIBLE);
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startScreen.setVisibility(View.GONE);
+                loadingText.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                loadingText.setText("Downloading Video, please wait...");
+                downloadAndPlayVideo();
+            }
+        });
+
+        optionsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (optionsLayout.getVisibility() == View.VISIBLE) {
+                    optionsLayout.setVisibility(View.GONE);
+                } else {
+                    optionsLayout.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -102,47 +105,61 @@ startButton.setOnClickListener(new View.OnClickListener() {
     }
 
     private void downloadAndPlayVideo() {
-        new Thread(() -> {
-            try {
-                File file = new File(getFilesDir(), localFileName);
-                if (!file.exists()) {
-                    URL url = new URL(videoUrl);
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                    connection.connect();
-                    int fileLength = connection.getContentLength();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File file = new File(getFilesDir(), localFileName);
+                    if (!file.exists()) {
+                        URL url = new URL(videoUrl);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.connect();
+                        int fileLength = connection.getContentLength();
 
-                    InputStream input = connection.getInputStream();
-                    FileOutputStream output = new FileOutputStream(file);
+                        InputStream input = connection.getInputStream();
+                        FileOutputStream output = new FileOutputStream(file);
 
-                    byte[] data = new byte[4096];
-                    int total = 0;
-                    int count;
-                    while ((count = input.read(data)) != -1) {
-                        total += count;
-                        output.write(data, 0, count);
+                        byte[] data = new byte[4096];
+                        int total = 0;
+                        int count;
+                        while ((count = input.read(data)) != -1) {
+                            total += count;
+                            output.write(data, 0, count);
 
-                        int progress = (int) (total * 100L / fileLength);
-                        handler.post(() -> progressBar.setProgress(progress));
+                            final int progress = (int) (total * 100L / fileLength);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressBar.setProgress(progress);
+                                }
+                            });
+                        }
+
+                        output.flush();
+                        output.close();
+                        input.close();
                     }
 
-                    output.flush();
-                    output.close();
-                    input.close();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            progressBar.setVisibility(View.GONE);
+                            loadingText.setVisibility(View.GONE);
+                            playVideo(new File(getFilesDir(), localFileName).getAbsolutePath());
+                        }
+                    });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "Error downloading video", Toast.LENGTH_LONG).show();
+                            loadingText.setText("Failed to download video.");
+                            progressBar.setVisibility(View.GONE);
+                        }
+                    });
                 }
-
-                handler.post(() -> {
-                    progressBar.setVisibility(View.GONE);
-                    loadingText.setVisibility(View.GONE);
-                    playVideo(new File(getFilesDir(), localFileName).getAbsolutePath());
-                });
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                handler.post(() -> {
-                    Toast.makeText(MainActivity.this, "Error downloading video", Toast.LENGTH_LONG).show();
-                    loadingText.setText("Failed to download video.");
-                    progressBar.setVisibility(View.GONE);
-                });
             }
         }).start();
     }
@@ -153,19 +170,25 @@ startButton.setOnClickListener(new View.OnClickListener() {
         mediaController.setAnchorView(videoView);
         videoView.setMediaController(mediaController);
 
-        videoView.setOnPreparedListener(mp -> {
-            videoView.start();
-            if (movementCheckbox.isChecked()) {
-                startMovingVideo();
-            }
-            if (rotationCheckbox.isChecked()) {
-                startRotatingVideo();
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                videoView.start();
+                if (movementCheckbox.isChecked()) {
+                    startMovingVideo();
+                }
+                if (rotationCheckbox.isChecked()) {
+                    startRotatingVideo();
+                }
             }
         });
 
-        videoView.setOnErrorListener((mp, what, extra) -> {
-            Toast.makeText(this, "Cannot play this video", Toast.LENGTH_LONG).show();
-            return true;
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                Toast.makeText(MainActivity.this, "Cannot play this video", Toast.LENGTH_LONG).show();
+                return true;
+            }
         });
     }
 
@@ -173,7 +196,7 @@ startButton.setOnClickListener(new View.OnClickListener() {
         final int screenWidth = getResources().getDisplayMetrics().widthPixels;
         final int screenHeight = getResources().getDisplayMetrics().heightPixels;
 
-        Runnable moveRunnable = new Runnable() {
+        final Runnable moveRunnable = new Runnable() {
             @Override
             public void run() {
                 int x = random.nextInt(screenWidth - videoView.getWidth());
