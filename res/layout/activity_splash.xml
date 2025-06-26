@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/splash_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
     android:gravity="center"
-    android:orientation="vertical">
+    android:background="#000000">
 
     <ImageView
-        android:id="@+id/splash_image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:id="@+id/splashImage"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_centerHorizontal="true"
         android:src="@drawable/splash"
-        android:layout_centerHorizontal="true" />
+        android:contentDescription="Splash Image"/>
 
     <TextView
-        android:id="@+id/splash_text"
-        android:layout_below="@id/splash_image"
+        android:id="@+id/splashText"
+        android:layout_below="@id/splashImage"
         android:layout_marginTop="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
         android:text="Made by GvYoutube"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:layout_centerHorizontal="true" />
-
+        android:textSize="18sp"/>
 </RelativeLayout>
