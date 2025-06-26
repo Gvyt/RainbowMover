@@ -1,190 +1,339 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.graphics.drawable.Drawable;
+import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.widget.*;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import android.widget.MediaController;
+import java.util.Random;
 import java.util.Calendar;
 
 public class MainActivity extends Activity {
 
-    private RelativeLayout splashLayout, titleScreenLayout;
+    private FrameLayout rootLayout;
+    private LinearLayout splashLayout;
+    private LinearLayout titleLayout;
     private VideoView videoView;
     private ProgressBar progressBar;
     private TextView loadingText;
-    private Button startButton, optionsButton;
-    private LinearLayout optionsPanel;
-    private CheckBox rotationCheckbox, movementCheckbox, normalCheckbox;
+    private LinearLayout optionsLayout;
+    private CheckBox rotationCheckbox;
+    private CheckBox movementCheckbox;
+    private CheckBox normalPlaybackCheckbox;
+    private Button startButton;
+    private Button optionsButton;
 
-    private boolean enableRotation = false;
-    private boolean enableMovement = false;
-    private final String videoUrl = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
+    private Handler handler;
+    private Random random;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        showSplashScreen();
+
+        rootLayout = new FrameLayout(this);
+        setContentView(rootLayout);
+
+        handler = new Handler(Looper.getMainLooper());
+        random = new Random();
+
+        setupSplashScreen();
     }
 
-    private void showSplashScreen() {
-        splashLayout = (RelativeLayout) getLayoutInflater().inflate(R.layout.activity_splash, null);
-        setContentView(splashLayout);
+    private void setupSplashScreen() {
+        splashLayout = new LinearLayout(this);
+        splashLayout.setOrientation(LinearLayout.VERTICAL);
+        splashLayout.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        splashLayout.setGravity(android.view.Gravity.CENTER);
 
-        ImageView splashImage = splashLayout.findViewById(R.id.splashImage);
-        TextView splashText = splashLayout.findViewById(R.id.splashText);
-
-        Calendar cal = Calendar.getInstance();
-        if (cal.get(Calendar.MONTH) == Calendar.APRIL && cal.get(Calendar.DAY_OF_MONTH) == 1) {
-            splashImage.setImageResource(R.drawable.splash_afd);
-            splashText.setText("made bye gvyubtubeeer");
-        } else {
-            splashImage.setImageResource(R.drawable.splash);
-            splashText.setText("Made by GvYoutube");
+        android.widget.ImageView splashImage = new android.widget.ImageView(this);
+        int imageResId = getResources().getIdentifier("splash", "drawable", getPackageName());
+        if (isAprilFirst()) {
+            int altImageResId = getResources().getIdentifier("splash_afd", "drawable", getPackageName());
+            if (altImageResId != 0) {
+                imageResId = altImageResId;
+            }
         }
+        splashImage.setImageResource(imageResId);
+        splashLayout.addView(splashImage);
 
-        Animation fadeInOut = new AlphaAnimation(0, 1);
-        fadeInOut.setDuration(1000);
-        fadeInOut.setRepeatMode(Animation.REVERSE);
-        fadeInOut.setRepeatCount(1);
-        splashLayout.startAnimation(fadeInOut);
+        TextView splashText = new TextView(this);
+        splashText.setText(isAprilFirst() ? "made bye gvyubtubeeer" : "Made by GvYoutube");
+        splashText.setTextSize(24);
+        splashText.setPadding(0, 20, 0, 0);
+        splashLayout.addView(splashText);
 
-        new Handler(Looper.getMainLooper()).postDelayed(this::showTitleScreen, 3000);
+        rootLayout.addView(splashLayout);
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                fadeOutSplash();
+            }
+        }, 3000);
+    }
+
+    private boolean isAprilFirst() {
+        Calendar c = Calendar.getInstance();
+        return c.get(Calendar.MONTH) == Calendar.APRIL && c.get(Calendar.DAY_OF_MONTH) == 1;
+    }
+
+    private void fadeOutSplash() {
+        splashLayout.animate().alpha(0f).setDuration(1000).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                rootLayout.removeView(splashLayout);
+                showTitleScreen();
+            }
+        });
     }
 
     private void showTitleScreen() {
-        setContentView(R.layout.title_screen);
+        titleLayout = new LinearLayout(this);
+        titleLayout.setOrientation(LinearLayout.VERTICAL);
+        titleLayout.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        titleLayout.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
 
-        startButton = findViewById(R.id.startButton);
-        optionsButton = findViewById(R.id.optionsButton);
-        optionsPanel = findViewById(R.id.optionsPanel);
-        rotationCheckbox = findViewById(R.id.rotationCheckbox);
-        movementCheckbox = findViewById(R.id.movementCheckbox);
-        normalCheckbox = findViewById(R.id.normalCheckbox);
+        TextView appName = new TextView(this);
+        appName.setText("RainbowMover v2.2");
+        appName.setTextSize(32);
+        appName.setPadding(0, 100, 0, 50);
+        titleLayout.addView(appName);
 
-        startButton.setOnClickListener(v -> startVideoFlow());
+        startButton = new Button(this);
+        startButton.setText("Start");
+        LinearLayout.LayoutParams startParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        startParams.setMargins(0, 20, 0, 20);
+        startButton.setLayoutParams(startParams);
+        titleLayout.addView(startButton);
 
-        optionsButton.setOnClickListener(v -> {
-            if (optionsPanel.getVisibility() == View.VISIBLE) {
-                optionsPanel.setVisibility(View.GONE);
-            } else {
-                optionsPanel.setVisibility(View.VISIBLE);
+        optionsButton = new Button(this);
+        optionsButton.setText("Options");
+        optionsButton.setLayoutParams(startParams);
+        titleLayout.addView(optionsButton);
+
+        rootLayout.addView(titleLayout);
+
+        setupOptionsLayout();
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startButton.setEnabled(false);
+                optionsButton.setEnabled(false);
+                titleLayout.removeView(startButton);
+                titleLayout.removeView(optionsButton);
+                showLoadingScreen();
+                startDownloadAndPlay();
             }
         });
 
-        normalCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            rotationCheckbox.setEnabled(!isChecked);
-            movementCheckbox.setEnabled(!isChecked);
+        optionsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (optionsLayout.getParent() == null) {
+                    titleLayout.addView(optionsLayout);
+                } else {
+                    titleLayout.removeView(optionsLayout);
+                }
+            }
         });
     }
 
-    private void startVideoFlow() {
-        // Load new layout
-        RelativeLayout videoLayout = new RelativeLayout(this);
-        videoView = new VideoView(this);
-        progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+    private void setupOptionsLayout() {
+        optionsLayout = new LinearLayout(this);
+        optionsLayout.setOrientation(LinearLayout.VERTICAL);
+        optionsLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        optionsLayout.setPadding(0, 20, 0, 0);
+
+        rotationCheckbox = new CheckBox(this);
+        rotationCheckbox.setText("Enable Rotation");
+        optionsLayout.addView(rotationCheckbox);
+
+        movementCheckbox = new CheckBox(this);
+        movementCheckbox.setText("Enable Movement");
+        optionsLayout.addView(movementCheckbox);
+
+        normalPlaybackCheckbox = new CheckBox(this);
+        normalPlaybackCheckbox.setText("Normal Playback (disables other options)");
+        optionsLayout.addView(normalPlaybackCheckbox);
+
+        normalPlaybackCheckbox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean normalChecked = normalPlaybackCheckbox.isChecked();
+                rotationCheckbox.setEnabled(!normalChecked);
+                movementCheckbox.setEnabled(!normalChecked);
+                if (normalChecked) {
+                    rotationCheckbox.setChecked(false);
+                    movementCheckbox.setChecked(false);
+                }
+            }
+        });
+    }
+
+    private void showLoadingScreen() {
         loadingText = new TextView(this);
-
         loadingText.setText("Downloading Video, please wait...");
-        loadingText.setTextSize(18);
-        loadingText.setPadding(20, 50, 20, 20);
+        loadingText.setTextSize(20);
+        loadingText.setPadding(0, 50, 0, 20);
+        titleLayout.addView(loadingText);
 
-        RelativeLayout.LayoutParams videoParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        videoView.setLayoutParams(videoParams);
-
-        RelativeLayout.LayoutParams progressParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-        progressParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        progressBar.setLayoutParams(progressParams);
-
-        RelativeLayout.LayoutParams textParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-        textParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        textParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        loadingText.setLayoutParams(textParams);
-
-        videoLayout.addView(videoView);
-        videoLayout.addView(loadingText);
-        videoLayout.addView(progressBar);
-
-        setContentView(videoLayout);
-
-        enableRotation = rotationCheckbox.isChecked();
-        enableMovement = movementCheckbox.isChecked();
-
-        new Thread(this::downloadAndPlayVideo).start();
+        progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progressBar.setIndeterminate(false);
+        progressBar.setMax(100);
+        progressBar.setProgress(0);
+        LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        pbParams.setMargins(50, 0, 50, 0);
+        progressBar.setLayoutParams(pbParams);
+        titleLayout.addView(progressBar);
     }
 
-    private void downloadAndPlayVideo() {
-        try {
-            File videoFile = new File(getFilesDir(), "downloaded_video.mp4");
+    private void startDownloadAndPlay() {
+        final String videoUrl = "https://ia601508.us.archive.org/16/items/rainbow-trololol/Rainbow%20Trololol.mp4";
 
-            URL url = new URL(videoUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
-            int fileLength = connection.getContentLength();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final java.io.File videoFile = new java.io.File(getFilesDir(), "appvid.mp4");
+                try {
+                    java.net.URL url = new java.net.URL(videoUrl);
+                    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+                    connection.connect();
+                    int contentLength = connection.getContentLength();
+                    java.io.InputStream input = connection.getInputStream();
+                    java.io.FileOutputStream output = new java.io.FileOutputStream(videoFile);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    int totalRead = 0;
 
-            InputStream input = new BufferedInputStream(url.openStream());
-            OutputStream output = new FileOutputStream(videoFile);
+                    while ((bytesRead = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                        totalRead += bytesRead;
+                        final int progress = (int)((totalRead / (float)contentLength) * 100);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressBar.setProgress(progress);
+                            }
+                        });
+                    }
+                    output.flush();
+                    output.close();
+                    input.close();
 
-            byte[] data = new byte[4096];
-            long total = 0;
-            int count;
-            while ((count = input.read(data)) != -1) {
-                total += count;
-                final int progress = (int) (total * 100 / fileLength);
-                runOnUiThread(() -> progressBar.setProgress(progress));
-                output.write(data, 0, count);
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            titleLayout.removeView(loadingText);
+                            titleLayout.removeView(progressBar);
+                            rootLayout.removeView(titleLayout);
+                            setupVideoPlayer(videoFile.getAbsolutePath());
+                        }
+                    });
+                } catch (Exception e) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "Error downloading video", Toast.LENGTH_LONG).show();
+                            startButton.setEnabled(true);
+                            optionsButton.setEnabled(true);
+                        }
+                    });
+                }
             }
-
-            output.flush();
-            output.close();
-            input.close();
-
-            runOnUiThread(() -> playVideo(Uri.fromFile(videoFile)));
-
-        } catch (Exception e) {
-            runOnUiThread(() -> Toast.makeText(this, "Failed to download video", Toast.LENGTH_LONG).show());
-        }
+        }).start();
     }
 
-    private void playVideo(Uri uri) {
-        loadingText.setVisibility(View.GONE);
-        progressBar.setVisibility(View.GONE);
+    private void setupVideoPlayer(String videoPath) {
+        videoView = new VideoView(this);
+        videoView.setVideoPath(videoPath);
 
-        videoView.setVideoURI(uri);
-        videoView.setOnPreparedListener(mp -> {
-            videoView.start();
-            if (enableMovement) {
-                animateMovement();
+        MediaController mediaController = new MediaController(this);
+        mediaController.setAnchorView(videoView);
+        videoView.setMediaController(mediaController);
+
+        rootLayout.addView(videoView);
+
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(final MediaPlayer mp) {
+                videoView.start();
+                if (rotationCheckbox.isChecked()) {
+                    startRotationAnimation();
+                }
+                if (movementCheckbox.isChecked()) {
+                    startMovementAnimation();
+                }
             }
-            if (enableRotation) {
-                videoView.animate().rotationBy(360).setDuration(10000).start();
+        });
+
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                Toast.makeText(MainActivity.this, "Cannot play this video", Toast.LENGTH_LONG).show();
+                return true;
             }
         });
     }
 
-    private void animateMovement() {
-        int maxX = getResources().getDisplayMetrics().widthPixels - 200;
-        int maxY = getResources().getDisplayMetrics().heightPixels - 200;
+    private void startRotationAnimation() {
+        videoView.animate().rotationBy(360f).setDuration(5000).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                startRotationAnimation();
+            }
+        });
+    }
 
-        videoView.animate()
-                .translationXBy((float) (Math.random() * maxX))
-                .translationYBy((float) (Math.random() * maxY))
-                .setDuration(4000)
-                .withEndAction(this::animateMovement)
-                .start();
+    private void startMovementAnimation() {
+        final int parentWidth = rootLayout.getWidth();
+        final int parentHeight = rootLayout.getHeight();
+        if (parentWidth == 0 || parentHeight == 0) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    startMovementAnimation();
+                }
+            }, 500);
+            return;
+        }
+        int videoWidth = videoView.getWidth();
+        int videoHeight = videoView.getHeight();
+
+        int maxX = parentWidth - videoWidth;
+        int maxY = parentHeight - videoHeight;
+
+        int nextX = random.nextInt(Math.max(maxX, 1));
+        int nextY = random.nextInt(Math.max(maxY, 1));
+
+        videoView.animate().x(nextX).y(nextY).setDuration(3000).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                startMovementAnimation();
+            }
+        });
     }
 }
