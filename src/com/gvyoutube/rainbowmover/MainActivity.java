@@ -62,9 +62,13 @@ public class MainActivity extends Activity {
         movementCheckbox.setChecked(true);
         updateOptionsState();
 
-        normalPlaybackCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            updateOptionsState();
-        });
+        normalPlaybackCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        rotationCheckbox.setEnabled(!isChecked);
+        movementCheckbox.setEnabled(!isChecked);
+    }
+});
 
         startButton.setOnClickListener(v -> {
             startScreen.setVisibility(View.GONE);
