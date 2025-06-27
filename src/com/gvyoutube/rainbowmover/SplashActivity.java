@@ -11,27 +11,31 @@ import java.util.Calendar;
 
 public class SplashActivity extends Activity {
 
+    private ImageView splashImage;
+    private TextView splashText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        ImageView splashImage = findViewById(R.id.splashImage);
-        TextView splashText = findViewById(R.id.splashText);
+        splashImage = findViewById(R.id.splashImage);
+        splashText = findViewById(R.id.splashText);
 
         Calendar calendar = Calendar.getInstance();
-        if (calendar.get(Calendar.MONTH) == Calendar.APRIL && calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        if (month == Calendar.APRIL && day == 1) {
             splashImage.setImageResource(R.drawable.splash_afd);
-            splashText.setText("made bye gvyubtubeeer");
-        } else {
-            splashImage.setImageResource(R.drawable.splash);
-            splashText.setText("Made by GvYoutube");
+            splashText.setText(R.string.made_by_april);
         }
 
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                startActivity(new Intent(SplashActivity.this, MainActivity.class));
+                Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+                startActivity(intent);
                 finish();
             }
         }, 3000);
