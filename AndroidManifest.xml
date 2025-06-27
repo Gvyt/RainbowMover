@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
-        android:label="RainbowMover v3.0"
+        android:label="RainbowMover v3.2"
         android:icon="@mipmap/appicon"
         android:theme="@android:style/Theme.Light">
         <activity android:name=".SplashActivity"
