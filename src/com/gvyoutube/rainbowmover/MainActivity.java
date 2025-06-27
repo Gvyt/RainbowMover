@@ -1,7 +1,6 @@
 package com.gvyoutube.rainbowmover;
 
 import android.app.Activity;
-import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -48,38 +47,45 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        videoView = findViewById(R.id.videoView);
-        progressBar = findViewById(R.id.progressBar);
-        loadingText = findViewById(R.id.loadingText);
-        startScreen = findViewById(R.id.startScreen);
-        startButton = findViewById(R.id.startButton);
-        optionsButton = findViewById(R.id.optionsButton);
-        optionsLayout = findViewById(R.id.optionsLayout);
-        rotationCheckbox = findViewById(R.id.rotationCheckbox);
-        movementCheckbox = findViewById(R.id.movementCheckbox);
-        normalPlaybackCheckbox = findViewById(R.id.normalPlaybackCheckbox);
+        videoView = (VideoView) findViewById(R.id.videoView);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        loadingText = (TextView) findViewById(R.id.loadingText);
+        startScreen = (LinearLayout) findViewById(R.id.startScreen);
+        startButton = (Button) findViewById(R.id.startButton);
+        optionsButton = (Button) findViewById(R.id.optionsButton);
+        optionsLayout = (LinearLayout) findViewById(R.id.optionsLayout);
+        rotationCheckbox = (CheckBox) findViewById(R.id.rotationCheckbox);
+        movementCheckbox = (CheckBox) findViewById(R.id.movementCheckbox);
+        normalPlaybackCheckbox = (CheckBox) findViewById(R.id.normalPlaybackCheckbox);
 
         movementCheckbox.setChecked(true);
         updateOptionsState();
 
         normalPlaybackCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                updateOptionsState();
+                rotationCheckbox.setEnabled(!isChecked);
+                movementCheckbox.setEnabled(!isChecked);
+                if (isChecked) {
+                    rotationCheckbox.setChecked(false);
+                    movementCheckbox.setChecked(false);
+                }
             }
         });
 
         startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 startScreen.setVisibility(View.GONE);
-                findViewById(R.id.videoLayout).setVisibility(View.VISIBLE);
                 loadingText.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.VISIBLE);
-                loadingText.setText("Downloading Video, please wait...");
+                loadingText.setText(getString(R.string.downloading_video));
                 downloadAndPlayVideo();
             }
         });
 
         optionsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 if (optionsLayout.getVisibility() == View.VISIBLE) {
                     optionsLayout.setVisibility(View.GONE);
@@ -91,10 +97,10 @@ public class MainActivity extends Activity {
     }
 
     private void updateOptionsState() {
-        boolean normal = normalPlaybackCheckbox.isChecked();
-        rotationCheckbox.setEnabled(!normal);
-        movementCheckbox.setEnabled(!normal);
-        if (normal) {
+        boolean normalChecked = normalPlaybackCheckbox.isChecked();
+        rotationCheckbox.setEnabled(!normalChecked);
+        movementCheckbox.setEnabled(!normalChecked);
+        if (normalChecked) {
             rotationCheckbox.setChecked(false);
             movementCheckbox.setChecked(false);
         }
@@ -102,6 +108,7 @@ public class MainActivity extends Activity {
 
     private void downloadAndPlayVideo() {
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     File file = new File(getFilesDir(), localFileName);
@@ -120,8 +127,10 @@ public class MainActivity extends Activity {
                         while ((count = input.read(data)) != -1) {
                             total += count;
                             output.write(data, 0, count);
+
                             final int progress = (int) (total * 100L / fileLength);
                             handler.post(new Runnable() {
+                                @Override
                                 public void run() {
                                     progressBar.setProgress(progress);
                                 }
@@ -134,6 +143,7 @@ public class MainActivity extends Activity {
                     }
 
                     handler.post(new Runnable() {
+                        @Override
                         public void run() {
                             progressBar.setVisibility(View.GONE);
                             loadingText.setVisibility(View.GONE);
@@ -141,12 +151,13 @@ public class MainActivity extends Activity {
                         }
                     });
 
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     e.printStackTrace();
                     handler.post(new Runnable() {
+                        @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, "Error downloading video", Toast.LENGTH_LONG).show();
-                            loadingText.setText("Failed to download video.");
+                            Toast.makeText(MainActivity.this, getString(R.string.error_downloading), Toast.LENGTH_LONG).show();
+                            loadingText.setText(getString(R.string.error_downloading));
                             progressBar.setVisibility(View.GONE);
                         }
                     });
@@ -162,6 +173,7 @@ public class MainActivity extends Activity {
         videoView.setMediaController(mediaController);
 
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
             public void onPrepared(MediaPlayer mp) {
                 videoView.start();
                 if (movementCheckbox.isChecked()) {
@@ -174,8 +186,9 @@ public class MainActivity extends Activity {
         });
 
         videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
-                Toast.makeText(MainActivity.this, "Cannot play this video", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, getString(R.string.error_playing), Toast.LENGTH_LONG).show();
                 return true;
             }
         });
@@ -186,9 +199,10 @@ public class MainActivity extends Activity {
         final int screenHeight = getResources().getDisplayMetrics().heightPixels;
 
         final Runnable moveRunnable = new Runnable() {
+            @Override
             public void run() {
-                int x = random.nextInt(Math.max(1, screenWidth - videoView.getWidth()));
-                int y = random.nextInt(Math.max(1, screenHeight - videoView.getHeight()));
+                int x = random.nextInt(Math.max(screenWidth - videoView.getWidth(), 1));
+                int y = random.nextInt(Math.max(screenHeight - videoView.getHeight(), 1));
                 videoView.animate().x(x).y(y).setDuration(3000).start();
                 handler.postDelayed(this, 3500);
             }
@@ -199,6 +213,7 @@ public class MainActivity extends Activity {
     private void startRotatingVideo() {
         final Runnable rotateRunnable = new Runnable() {
             float rotation = 0f;
+            @Override
             public void run() {
                 rotation += 10f;
                 videoView.setRotation(rotation % 360);
