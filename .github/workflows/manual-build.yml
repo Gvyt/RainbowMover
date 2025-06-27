@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Needed to create tags and releases
+  contents: write
 
 jobs:
   build:
@@ -30,12 +30,23 @@ jobs:
         unzip -q tools.zip -d $ANDROID_HOME/cmdline-tools
         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
 
+    - name: Get latest Android SDK platform version
+      id: sdkversion
+      run: |
+        latest_sdk=$($ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "platforms;android-" | grep -Eo 'android-[0-9]+' | cut -d'-' -f2 | sort -nr | head -n1)
+        echo "LATEST_SDK=$latest_sdk" >> $GITHUB_ENV
+        echo "Using latest Android SDK platform: $latest_sdk"
+
     - name: Install Android SDK packages
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
           "platform-tools" \
-          "platforms;android-33" \
+          "platforms;android-${{ env.LATEST_SDK }}" \
           "build-tools;34.0.0"
+
+    - name: Patch AndroidManifest.xml to update only targetSdkVersion
+      run: |
+        sed -i "s/android:targetSdkVersion=\"[0-9]*\"/android:targetSdkVersion=\"${{ env.LATEST_SDK }}\"/" AndroidManifest.xml
 
     - name: Generate R.java with aapt
       run: |
@@ -43,13 +54,13 @@ jobs:
         $ANDROID_HOME/build-tools/34.0.0/aapt package -f -m -J src \
           -M AndroidManifest.xml \
           -S res \
-          -I $ANDROID_HOME/platforms/android-33/android.jar
+          -I $ANDROID_HOME/platforms/android-${{ env.LATEST_SDK }}/android.jar
 
     - name: Compile Java sources
       run: |
         mkdir -p obj
         javac -source 1.8 -target 1.8 \
-          -bootclasspath $ANDROID_HOME/platforms/android-33/android.jar \
+          -bootclasspath $ANDROID_HOME/platforms/android-${{ env.LATEST_SDK }}/android.jar \
           -d obj $(find src -name "*.java")
 
     - name: Convert classes to dex
@@ -61,16 +72,12 @@ jobs:
         $ANDROID_HOME/build-tools/34.0.0/aapt package -f \
           -M AndroidManifest.xml \
           -S res \
-          -I $ANDROID_HOME/platforms/android-33/android.jar \
+          -I $ANDROID_HOME/platforms/android-${{ env.LATEST_SDK }}/android.jar \
           -F unsigned.apk obj
 
     - name: Add classes.dex to APK
       run: |
         zip -j unsigned.apk classes.dex
-
-    - name: Align APK
-      run: |
-        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 unsigned.apk aligned.apk
 
     - name: Generate debug keystore
       run: |
@@ -90,46 +97,46 @@ jobs:
           --ks debug.keystore \
           --ks-pass pass:android \
           --key-pass pass:android \
-          --v1-signing-enabled true \
-          --v2-signing-enabled true \
-          --out RainbowMover_signed.apk \
-          aligned.apk
+          --out RainbowMover_signed.apk unsigned.apk
 
-    - name: Verify APK signature and integrity
+    - name: Align APK
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk
+
+    - name: Verify APK
       run: |
         echo "✅ Verifying final APK integrity..."
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_signed.apk || {
+        $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose RainbowMover_aligned.apk || {
           echo "❌ Final APK failed verification!"
           exit 1
         }
 
-    - name: Extract version from AndroidManifest.xml
+    - name: Extract version name
       id: version
       run: |
         version=$(grep -oP 'versionName="\K[^"]+' AndroidManifest.xml)
-        echo "version=$version"
         echo "version=$version" >> $GITHUB_OUTPUT
 
-    - name: Rename signed APK
+    - name: Rename APK
       run: |
-        mv RainbowMover_signed.apk RainbowMover_${{ steps.version.outputs.version }}.apk
+        mv RainbowMover_aligned.apk RainbowMover_${{ steps.version.outputs.version }}.apk
 
-    - name: Configure git user
+    - name: Configure Git
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
 
-    - name: Create and push git tag (force update if exists)
+    - name: Create and push tag
       run: |
         git tag -f v${{ steps.version.outputs.version }}
         git push origin -f v${{ steps.version.outputs.version }}
 
-    - name: Upload APK to GitHub Release
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.version.outputs.version }}
         name: RainbowMover v${{ steps.version.outputs.version }}
-        body: Auto-generated build of RainbowMover v${{ steps.version.outputs.version }}
+        body: Auto-generated build of RainbowMover
         files: RainbowMover_${{ steps.version.outputs.version }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
