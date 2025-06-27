@@ -4,7 +4,7 @@ A pretty much useless app that plays and moves the peak of memes.
 I dunno.
 I was bored :(
 # Required Specs
-You need a video playing capable Android device with Android 10+ (Android SDK 29+).
+You need a video playing capable Android device with Android 14+.
 # Common Issues, and how to Fix them.
 **App not installed.** </br>
 This may be due to a bug in the APK. It is unfixable until a new version is pushed.
