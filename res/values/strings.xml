@@ -1,11 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RainbowMover</string>
-    <string name="app_icon_desc">App Icon</string>
-    <string name="splash_text">Made by GvYoutube</string>
-    <string name="start_button">Start</string>
-    <string name="options_button">Options</string>
-    <string name="downloading_text">Downloading Video, please wait...</string>
-    <string name="normal_playback">Normal Playback</string>
-    <string name="rotation">Rotation</string>
-    <string name="movement">Movement</string>
+    <string name="app_name">RainbowMover v3.2.1</string>
+    <string name="start">Start</string>
+    <string name="options">Options</string>
+    <string name="downloading_video">Downloading Video, please wait...</string>
+    <string name="error_downloading">Oh, noes, Failed to download video.</string>
+    <string name="error_playing">Oh, noes, Cannot play this video</string>
+    <string name="made_by">Made by GvYoutube</string>
+    <string name="made_by_april">made bye gvyubtub :cool_face:</string>
 </resources>
