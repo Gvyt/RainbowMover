@@ -1,100 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootLayout"
+    android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Title + Start/Options -->
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:id="@+id/loadingLayout"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/loadingText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/downloading_video"
+            android:textSize="18sp" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            android:progress="0" />
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/startScreen"
         android:orientation="vertical"
         android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible"
-        android:padding="24dp">
+        android:background="#DDFFFFFF">
 
         <TextView
-            android:id="@+id/appTitle"
-            android:text="RainbowMover v3.0"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:gravity="center"
+            android:id="@+id/appNameText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp" />
+            android:text="@string/app_name"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp" />
 
         <Button
             android:id="@+id/startButton"
-            android:text="Start"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="@string/start"
+            android:backgroundTint="#6200EE"
+            android:textColor="#FFFFFF"
+            android:elevation="6dp" />
 
         <Button
             android:id="@+id/optionsButton"
-            android:text="Options"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" />
-
-        <LinearLayout
-            android:id="@+id/optionsLayout"
-            android:orientation="vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_marginTop="12dp">
-
-            <CheckBox
-                android:id="@+id/rotationCheckbox"
-                android:text="Enable Rotation"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <CheckBox
-                android:id="@+id/movementCheckbox"
-                android:text="Enable Movement"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true" />
-
-            <CheckBox
-                android:id="@+id/normalPlaybackCheckbox"
-                android:text="Normal Playback"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
+            android:text="@string/options"
+            android:layout_marginTop="16dp" />
     </LinearLayout>
 
-    <!-- Loader + Video -->
     <LinearLayout
-        android:id="@+id/videoLayout"
+        android:id="@+id/optionsLayout"
         android:orientation="vertical"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center">
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:background="#AAFFFFFF"
+        android:visibility="gone"
+        android:layout_gravity="bottom">
 
-        <TextView
-            android:id="@+id/loadingText"
-            android:text="Downloading Video, please wait..."
+        <CheckBox
+            android:id="@+id/rotationCheckbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:textSize="18sp"
-            android:layout_marginBottom="12dp" />
+            android:text="Enable Rotation" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
-
-        <VideoView
-            android:id="@+id/videoView"
+        <CheckBox
+            android:id="@+id/movementCheckbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:text="Enable Movement" />
+
+        <CheckBox
+            android:id="@+id/normalPlaybackCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Normal Playback (disables others)" />
     </LinearLayout>
+
 </FrameLayout>
