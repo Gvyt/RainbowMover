@@ -97,11 +97,11 @@ jobs:
           --ks debug.keystore \
           --ks-pass pass:android \
           --key-pass pass:android \
-          --out RainbowMover_signed.apk unsigned.apk
+          --out unsigned.apk RainbowMover_signed.apk
 
     - name: Align APK
       run: |
-        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 RainbowMover_signed.apk RainbowMover_aligned.apk
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 unsigned.apk RainbowMover_aligned.apk
 
     - name: Verify APK
       run: |
